@@ -2,7 +2,6 @@ package com.example.alize.taquin;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -18,47 +17,55 @@ public class TaquinAdapter extends BaseAdapter {
     private Context mContext;
     private Bitmap bouts;
     private Bitmap vide;
+    private int level;
     private ArrayList<Bitmap> imgBouts;
+    private ArrayList<Bitmap> boutBonOrdre;
 
-    public TaquinAdapter(Context c, Bitmap b, int w, int h) {
+    public TaquinAdapter(Context c, int l, Bitmap b, int w, int h) {
         mContext = c;
+        level = l;
         decoupe(b, w, h);
-        // mélange des bouts
         melange();
     }
 
     private void decoupe(Bitmap img, int w, int h) {
-        imgBouts = new ArrayList<>();
+        imgBouts = new ArrayList<>(); // on met les bouts dans une ArrayList pour pouvoir les mélanger par la suite
+        boutBonOrdre = new ArrayList<>(); // Tableau qui contiendra les morceaux dans l'ordre
 
+        // Récupération des tailles de la bitmap
         int iw = img.getWidth();
         int ih = img.getHeight();
 
-        for(int i=0; i<3; i++){
-            for(int j=0; j<3; j++){
-                if(i == 2 && j == 2){
-//                    Bitmap bout = Bitmap.createBitmap(iw/3, ih/3, Bitmap.Config.ALPHA_8);
+        // Découpe de l'image
+        for(int i=0; i<level; i++){
+            for(int j=0; j<level; j++){
+                if(i == level-1 && j == level-1){
+                    vide = Bitmap.createBitmap(iw/level, ih/level, Bitmap.Config.ALPHA_8);
                     Bitmap bout = vide;
                     imgBouts.add(bout);
+                    boutBonOrdre.add(bout);
                 }else{
-                    Bitmap bout = Bitmap.createBitmap(img, j*iw/3, i*ih/3, iw/3, ih/3);
+                    Bitmap bout = Bitmap.createBitmap(img, j*iw/level, i*ih/level, iw/level, ih/level);
                     imgBouts.add(bout);
-                    //bouts[(i*3)+j] = Bitmap.createScaledBitmap(bouts[(i*3)+j], w/3, h/3, true);
+                    boutBonOrdre.add(bout);
                 }
             }
         }
     }
 
     @Override
-    public int getCount() {return 9;}
+    public int getCount() {
+        return level*level;
+    }
 
     @Override
     public Object getItem(int position) {
-        return null;
+        return imgBouts.get(position);
     }
 
     @Override
     public long getItemId(int position) {
-        return 0;
+        return boutBonOrdre.indexOf(imgBouts.get(position));
     }
 
     @Override
@@ -70,59 +77,78 @@ public class TaquinAdapter extends BaseAdapter {
         } else {
             imageView = (ImageView) convertView;
         }
-//        imageView.setImageBitmap(bouts[position]);
+        // on place tous les morceaux dans la grille
         imageView.setImageBitmap(imgBouts.get(position));
         imageView.setAdjustViewBounds(true);
         return imageView;
     }
 
-    public boolean permutation(int position){
-        boolean permutable = false;
-        int caseVide = imgBouts.indexOf(vide);
+    // permutation des morceaux avec la position du morceau cliqué en paramètre
+    public void permutation(int position){
+        int caseVide = imgBouts.indexOf(vide); // récupération de la position du morceau vide
         int[] testCase = {0,0,0,0};
 
         if(position >=0 && position < imgBouts.size()){
+            // on rempli le tableau de cases à tester
             if(position+1 != 0){
                 testCase[0] = position+1;
             }
-            if(position+3 != 0){
-                testCase[1] = position+3;
+            if(position+level != 0){
+                testCase[1] = position+level;
             }
             if(position-1 != 0){
                 testCase[2] = position-1;
             }
-            if(position-3 != 0){
-                testCase[3] = position-3;
+            if(position-level != 0){
+                testCase[3] = position-level;
             }
+            // on va tester les 4 cotés du bout d'image pour savoir si on a la case vide
             for(int i=0; i<4; i++){
                 if(testCase[i] == caseVide){
+                    // si on tombe sur la case vide on permute les cases
                     Bitmap temp = imgBouts.get(position);
                     imgBouts.set(position, vide);
                     imgBouts.set(caseVide, temp);
-                    permutable = true;
                 }
             }
         }
-        return permutable;
     }
+
+    //1000 fois nous allons fair ejouer aléatoirement le jeu tout seul pour le mélanger, ceci évite de tomber sur un problème non résolvable
     public void melange(){
-//        Collections.shuffle(imgBouts);
-        for(int i=0; i<5; i++){ // Nb de fois que l'on va jouer aléatoirement pour mélanger le jeu
-            int currentPosition = imgBouts.indexOf(vide);
-            int random = (int) (Math.random()*3); // valeur en fonction du nombre de case du jeu
+        for(int i=0; i<1000; i++){ // Nb de fois que l'on va jouer aléatoirement pour mélanger le jeu
+            int currentPosition = imgBouts.indexOf(vide); // on récupère la position courante de la case vide
+            int random = (int) (Math.random()*level); // valeur de random en fonction du nombre de cases du jeu
+
+            // on effectue la permutation en fonction du chiffre retourné par random
             if(random == 0){
                 permutation(currentPosition+1);
             }
             if(random == 1){
-                permutation(currentPosition+3);
+                permutation(currentPosition+level);
             }
             if(random == 2){
                 permutation(currentPosition-1);
             }
             if(random == 3){
-                permutation(currentPosition-3);
+                permutation(currentPosition-level);
             }
         }
     }
 
+    // Test si le jeu est terminé
+    public boolean bonOrdre(){
+        // pour chaque morceaux de l'image
+        for(int i=0; i<boutBonOrdre.size(); i++){
+            // si le morceau n'est pas le morceau vide
+            if(boutBonOrdre.get(i) != null){
+                // si les deux bouts sont différent on retourne false, le jeu n'est pas terminé
+                if(!boutBonOrdre.get(i).sameAs(imgBouts.get(i))){
+                    return false;
+                }
+            }
+        }
+        // à la fin des itérations si aucune différence n'est détecté on retourne true, le jeu est dans le bon ordre
+        return true;
+    }
 }

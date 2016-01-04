@@ -1,123 +1,82 @@
 package com.example.alize.taquin;
 
-import android.content.Context;
-import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
-import android.view.GestureDetector;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.Toast;
 
-import java.io.FileInputStream;
+import java.io.File;
 
 public class TaquinActivity extends AppCompatActivity {
 
     private static final String DEBUG_TAG = "debuggg";
-    float initialX, initialY;
-    private boolean permutable = false;
     private TaquinAdapter taquinAdapter;
+    private Button btnRejouer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.content_taquin);
+        setContentView(R.layout.content_taquin); // chargement du layout
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // Bloque l'application en mode portrait
+        final GridView gridview = (GridView) findViewById(R.id.gridview);
 
-        // taille de l'écran
+        // taille de l'écran du téléphone
         Display d = getWindowManager().getDefaultDisplay();
         DisplayMetrics m = new DisplayMetrics();
         d.getMetrics(m);
 
-        Bitmap bmp = null;
-        String filename = getIntent().getStringExtra("image");
-        try {
-            FileInputStream is = this.openFileInput(filename);
-            bmp = BitmapFactory.decodeStream(is);
-            is.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        String imageUri = getIntent().getStringExtra("mCurrentPhotoPath"); // Récupère le lien de la photo envoyé en paramètre de Intent
+        File image = new File(imageUri); // création d'une image à partir de ce lien
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath(), bmOptions); // création d'une bitmap à partir du fichier image
 
-        final GridView gridview = (GridView) findViewById(R.id.gridview);
-//        gridview.setAdapter(new TaquinAdapter(this, bmp, m.widthPixels, m.heightPixels));
-        taquinAdapter = new TaquinAdapter(this, BitmapFactory.decodeResource(this.getResources(), R.drawable.jina), m.widthPixels, m.heightPixels);
+        int level = getIntent().getIntExtra("level", 3); // récupère le niveau de la grille envoyé en paramètre de l'Intent
+        gridview.setNumColumns(level); // Découpe en colonnes du gridView en fonction du niveau reçu
+
+        // boutons restart et quitter
+        btnRejouer = (Button) findViewById(R.id.rejouer);
+        btnRejouer.setVisibility(View.GONE); // on cache le bouton quand le jeu est en cours
+        // au clique sur le bouton on revient sur le premier écran de jeu (accueil)
+        btnRejouer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TaquinActivity.this, MainActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        // Envoi le niveau, la bitmap, et la taille de l'écran à l'adapteur pour traitement
+        taquinAdapter = new TaquinAdapter(this, level, bitmap, m.widthPixels, m.heightPixels);
         gridview.setAdapter(taquinAdapter);
-        // affichage de la petite bulle de numéro de la case au clique
+
+        // Au clique sur une case on effectue différents tests et traitements
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                permutable = taquinAdapter.permutation(position);
+                // Permutation des pièces de l'image (vérification au sein même de la fonction si c'est possible)
+                taquinAdapter.permutation(position);
+
+                // Mise à jour de la grille pour voir la permutation
                 gridview.invalidateViews();
-                Log.d("toto", permutable+"");
-                Toast.makeText(TaquinActivity.this, "" + position,
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
 
-        gridview.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-//                Log.d(DEBUG_TAG, event.toString());
-                int action = event.getActionMasked();
-                switch (action) {
-                    case MotionEvent.ACTION_DOWN:
-                        initialX = event.getX();
-                        initialY = event.getY();
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        float finalX = event.getX();
-                        float finalY = event.getY();
-                        String direction = "";
-
-                        Log.d(DEBUG_TAG, "finalX: "+finalX+" initialX: "+initialX);
-                        Log.d(DEBUG_TAG, "finalY: "+finalY+" initialY: "+initialY);
-
-                        if (initialX < finalX) {
-                            Log.d(DEBUG_TAG, "Left to Right swipe performed");
-                            direction = "droite";
-                        }
-
-                        if (initialX > finalX) {
-                            Log.d(DEBUG_TAG, "Right to Left swipe performed");
-                            direction = "gauche";
-                        }
-
-                        if (initialY < finalY) {
-                            Log.d(DEBUG_TAG, "Up to Down swipe performed");
-                            direction = "bas";
-                        }
-
-                        if (initialY > finalY) {
-                            Log.d(DEBUG_TAG, "Down to Up swipe performed");
-                            direction = "haut";
-                        }
-                        Log.d(DEBUG_TAG, direction);
-                        break;
-                    case MotionEvent.ACTION_CANCEL:
-//                        Log.d(DEBUG_TAG,"Action was CANCEL");
-                        break;
-                    case MotionEvent.ACTION_OUTSIDE:
-//                        Log.d(DEBUG_TAG, "Movement occurred outside bounds of current screen element");
-                        break;
+                if(taquinAdapter.bonOrdre()){
+                    // Affichage d'un message pour féliciter le joueur
+                    Toast toast = Toast.makeText(TaquinActivity.this, "Gagné ! Le jeu est terminé", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.CENTER, 0, 0);
+                    toast.show();
+                    gridview.setOnItemClickListener(null); // la partie est terminée, on stop le listner pour ne plus donner la possibilité de déplacer les cases
+                    btnRejouer.setVisibility(View.VISIBLE); // le bouton pour revenir à l'accueil s'affiche
                 }
-                return false;
             }
         });
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-
-        return super.onTouchEvent(event);
     }
 }
