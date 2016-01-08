@@ -64,11 +64,10 @@ public class TaquinActivity extends AppCompatActivity {
         // Au clique sur une case on effectue différents tests et traitements
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                // Permutation des pièces de l'image
-
+                // Permutation des pièces de l'image & stockage de l'animation créée
                 animation = taquinAdapter.permutation(position);
-                View view = gridview.getChildAt(position);
-                animation.setDuration(300);
+                View view = gridview.getChildAt(position); // on récupère la vue de l'enfant de la gridview à la position "position"
+                animation.setDuration(300); // time de l'animation
                 animation.setAnimationListener(new Animation.AnimationListener() {
                     @Override
                     public void onAnimationStart(Animation animation) {
@@ -77,7 +76,7 @@ public class TaquinActivity extends AppCompatActivity {
 
                     @Override
                     public void onAnimationEnd(Animation animation) {
-                        // Mise à jour de la grille pour voir la permutation
+                        // Mise à jour de la grille pour voir la permutation après que l'animation soit terminée
                         gridview.invalidateViews();
                     }
 
@@ -86,7 +85,7 @@ public class TaquinActivity extends AppCompatActivity {
 
                     }
                 });
-                view.startAnimation(animation);
+                view.startAnimation(animation); // démarrage de l'animation
 
                 if(taquinAdapter.bonOrdre()){
                     // Affichage d'un message pour féliciter le joueur

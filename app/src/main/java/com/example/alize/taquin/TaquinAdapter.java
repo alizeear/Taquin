@@ -91,8 +91,9 @@ public class TaquinAdapter extends BaseAdapter {
     public Animation permutation(int position){
         int caseVide = imgBouts.indexOf(vide); // récupération de la position du morceau vide
         int[] testCase = {0,0,0,0};
-        float translateX = 0;
-        float translateY = 0;
+        // Initialisation des valeurs de destinations de l'animation
+        float destinationX = 0;
+        float destinationY = 0;
 
         if(position >=0 && position < imgBouts.size()){
             // on rempli le tableau de cases à tester
@@ -111,14 +112,16 @@ public class TaquinAdapter extends BaseAdapter {
             // on va tester les 4 cotés du bout d'image pour savoir si on a la case vide
             for(int i=0; i<4; i++){
                 if(testCase[i] == caseVide){
+                    // on attribut des valeurs aux variables de points de destination pour l'animation
+                    // vers la droite, on veux que l'image se décale de 1 fois sa taille en x donc vers la droite
                     if(i==0){
-                        translateX = 1;
-                    }else if(i==1){
-                        translateY = 1;
-                    }else if(i==2){
-                        translateX = -1;
-                    }else if(i==3){
-                        translateY = -1;
+                        destinationX = 1;
+                    }else if(i==1){ // vers le bas, on veux que l'image se décale de 1 fois sa taille en y donc vers le bas
+                        destinationY = 1;
+                    }else if(i==2){ // vers la gauche, on veux que l'image se décale de 1 fois sa taille en x donc vers la gauche
+                        destinationX = -1;
+                    }else if(i==3){ // vers le haut, on veux que l'image se décale de 1 fois sa taille en y donc vers le haut
+                        destinationY = -1;
                     }
 
                     // si on tombe sur la case vide on permute les cases
@@ -128,8 +131,9 @@ public class TaquinAdapter extends BaseAdapter {
                 }
             }
         }
-        animation = new TranslateAnimation(TranslateAnimation.RELATIVE_TO_SELF, (float)0, TranslateAnimation.RELATIVE_TO_SELF, translateX,
-                TranslateAnimation.RELATIVE_TO_SELF, (float)0, TranslateAnimation.RELATIVE_TO_SELF, translateY);
+        // on créé l'animation, avec relative_to_self on dit que la valeur est un pourcentage de l'image, ici 1 est égale à 100%
+        animation = new TranslateAnimation(TranslateAnimation.RELATIVE_TO_SELF, (float)0, TranslateAnimation.RELATIVE_TO_SELF, destinationX,
+                TranslateAnimation.RELATIVE_TO_SELF, (float)0, TranslateAnimation.RELATIVE_TO_SELF, destinationY);
         return animation;
     }
 
