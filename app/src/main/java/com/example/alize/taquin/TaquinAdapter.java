@@ -2,8 +2,11 @@ package com.example.alize.taquin;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
@@ -20,6 +23,7 @@ public class TaquinAdapter extends BaseAdapter {
     private int level;
     private ArrayList<Bitmap> imgBouts;
     private ArrayList<Bitmap> boutBonOrdre;
+    private Animation animation;
 
     public TaquinAdapter(Context c, int l, Bitmap b, int w, int h) {
         mContext = c;
@@ -84,9 +88,11 @@ public class TaquinAdapter extends BaseAdapter {
     }
 
     // permutation des morceaux avec la position du morceau cliqué en paramètre
-    public void permutation(int position){
+    public Animation permutation(int position){
         int caseVide = imgBouts.indexOf(vide); // récupération de la position du morceau vide
         int[] testCase = {0,0,0,0};
+        float translateX = 0;
+        float translateY = 0;
 
         if(position >=0 && position < imgBouts.size()){
             // on rempli le tableau de cases à tester
@@ -105,6 +111,16 @@ public class TaquinAdapter extends BaseAdapter {
             // on va tester les 4 cotés du bout d'image pour savoir si on a la case vide
             for(int i=0; i<4; i++){
                 if(testCase[i] == caseVide){
+                    if(i==0){
+                        translateX = 1;
+                    }else if(i==1){
+                        translateY = 1;
+                    }else if(i==2){
+                        translateX = -1;
+                    }else if(i==3){
+                        translateY = -1;
+                    }
+
                     // si on tombe sur la case vide on permute les cases
                     Bitmap temp = imgBouts.get(position);
                     imgBouts.set(position, vide);
@@ -112,6 +128,9 @@ public class TaquinAdapter extends BaseAdapter {
                 }
             }
         }
+        animation = new TranslateAnimation(TranslateAnimation.RELATIVE_TO_SELF, (float)0, TranslateAnimation.RELATIVE_TO_SELF, translateX,
+                TranslateAnimation.RELATIVE_TO_SELF, (float)0, TranslateAnimation.RELATIVE_TO_SELF, translateY);
+        return animation;
     }
 
     //1000 fois nous allons fair ejouer aléatoirement le jeu tout seul pour le mélanger, ceci évite de tomber sur un problème non résolvable

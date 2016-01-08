@@ -10,6 +10,7 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
+import android.view.animation.Animation;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
@@ -22,6 +23,7 @@ public class TaquinActivity extends AppCompatActivity {
     private static final String DEBUG_TAG = "debuggg";
     private TaquinAdapter taquinAdapter;
     private Button btnRejouer;
+    private Animation animation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,11 +64,29 @@ public class TaquinActivity extends AppCompatActivity {
         // Au clique sur une case on effectue différents tests et traitements
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                // Permutation des pièces de l'image (vérification au sein même de la fonction si c'est possible)
-                taquinAdapter.permutation(position);
+                // Permutation des pièces de l'image
 
-                // Mise à jour de la grille pour voir la permutation
-                gridview.invalidateViews();
+                animation = taquinAdapter.permutation(position);
+                View view = gridview.getChildAt(position);
+                animation.setDuration(300);
+                animation.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        // Mise à jour de la grille pour voir la permutation
+                        gridview.invalidateViews();
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+                });
+                view.startAnimation(animation);
 
                 if(taquinAdapter.bonOrdre()){
                     // Affichage d'un message pour féliciter le joueur
